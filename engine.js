@@ -97,7 +97,9 @@
       }
     }
     if (stationOffset < BLOCK_SECONDS) {
-      segments.push({kind:"station", title:"Coming up next", videoId:"", cleared:true, sourceStart:0, stationStart:stationOffset, duration:BLOCK_SECONDS-stationOffset});
+      const duration = BLOCK_SECONDS - stationOffset;
+      segments.push({kind:"movie", title:block.movie.title, videoId:block.movie.videoId, cleared:block.movie.cleared, sourceStart:0, stationStart:stationOffset, duration});
+      stationOffset += duration;
     }
     return segments;
   }
