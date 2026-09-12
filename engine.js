@@ -1,7 +1,9 @@
 (function (root) {
   "use strict";
 
-  const TIME_ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  // One absolute broadcast clock keeps every live viewer on the same cartoon.
+  // UI code may still format these timestamps in each viewer's local timezone.
+  const TIME_ZONE = "UTC";
   const BLOCK_SECONDS = 1800;
   const BREAK_AFTER_CONTENT_SECONDS = [660];
 
@@ -14,14 +16,7 @@
   }
 
   function zonedToUtc(year, month, day, hour = 0, minute = 0, second = 0) {
-    const target = Date.UTC(year, month - 1, day, hour, minute, second);
-    let guess = target;
-    for (let i = 0; i < 4; i++) {
-      const p = stationParts(new Date(guess));
-      const represented = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
-      guess += target - represented;
-    }
-    return guess;
+    return Date.UTC(year, month - 1, day, hour, minute, second);
   }
 
   function dateKey(nowMs) {
@@ -112,9 +107,7 @@
     const segmentElapsed = Math.max(0, blockElapsed - segment.stationStart);
     const segmentIndex = segments.indexOf(segment);
     let movieReturnsIn = segment.duration - segmentElapsed;
-    for (let i = segmentIndex + 1; segment.kind === "commercial" && i < segments.length && segments[i].kind === "commercial"; i++) {
-      movieReturnsIn += segments[i].duration;
-    }
+    for (let i = segmentIndex + 1; segment.kind === "commercial" && i < segments.length && segments[i].kind === "commercial"; i++) movieReturnsIn += segments[i].duration;
     return {
       block, segment, segmentElapsed, blockElapsed,
       mediaSeconds: segment.sourceStart + segmentElapsed,
