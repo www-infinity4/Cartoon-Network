@@ -44,7 +44,13 @@ window.HERMIT_CATALOG = [
   { id:"CN-041", title:"Bye, Bye, Fly", year:1987, collection:"Teenage Mutant Ninja Turtles", runtimeSeconds:1320, videoId:"2uQHyeJoAHk", source:"YouTube", networkChannel:"Cartoon Network", cleared:true },
   { id:"CN-042", title:"Cowabunga Shredhead", year:1987, collection:"Teenage Mutant Ninja Turtles", runtimeSeconds:1320, videoId:"YDY7Vd9vxGQ", source:"YouTube", networkChannel:"Cartoon Network", cleared:true },
   { id:"CN-043", title:"Four Turtles and a Baby", year:1987, collection:"Teenage Mutant Ninja Turtles", runtimeSeconds:1320, videoId:"OeJAFtGeAJA", source:"YouTube", networkChannel:"Cartoon Network", cleared:true },
-  { id:"CN-044", title:"Season One Turtle Power", year:1987, collection:"Teenage Mutant Ninja Turtles", runtimeSeconds:1320, videoId:"cA5yaZ4f8jI", source:"YouTube", networkChannel:"Cartoon Network", cleared:true }
+  { id:"CN-044", title:"Season One Turtle Power", year:1987, collection:"Teenage Mutant Ninja Turtles", runtimeSeconds:1320, videoId:"cA5yaZ4f8jI", source:"YouTube", networkChannel:"Cartoon Network", cleared:true },
+  { id:"CN-045", title:"The Eds Are Coming", year:1999, collection:"Ed, Edd n Eddy", runtimeSeconds:1320, videoId:"X-HRLChOTOA", source:"Cartoon Network · YouTube", networkChannel:"Cartoon Network", cleared:true },
+  { id:"CN-046", title:"Read All About Ed", year:1999, collection:"Ed, Edd n Eddy", runtimeSeconds:660, videoId:"Tc0rHaoP7HY", source:"Cartoon Cartoons · YouTube", networkChannel:"Cartoon Network", cleared:true },
+  { id:"CN-047", title:"Nagged to Ed", year:1999, collection:"Ed, Edd n Eddy", runtimeSeconds:1320, videoId:"srtbNR8AhPE", source:"Cartoon Cartoons · YouTube", networkChannel:"Cartoon Network", cleared:true },
+  { id:"CN-048", title:"Part-Time Job", year:1997, collection:"Cow and Chicken", runtimeSeconds:660, videoId:"FN6eP63HhvI", source:"Cartoon Cartoons · YouTube", networkChannel:"Cartoon Network", cleared:true },
+  { id:"CN-049", title:"Bubblevicious / The Bare Facts", year:1998, collection:"The Powerpuff Girls", runtimeSeconds:1320, videoId:"c0KlvkCKpE4", source:"Cartoon Network · YouTube", networkChannel:"Cartoon Network", cleared:true },
+  { id:"CN-050", title:"Moral Decay / Meet the Beat Alls", year:1998, collection:"The Powerpuff Girls", runtimeSeconds:1320, videoId:"O9Nw51J1r8E", source:"Cartoon Network · YouTube", networkChannel:"Cartoon Network", cleared:true }
 ].map(program => ({ ...program, posterUrl:"" }));
 
 window.INFINITY_CHANNEL = {
