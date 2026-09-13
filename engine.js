@@ -1,9 +1,9 @@
 (function (root) {
   "use strict";
 
-  // One absolute broadcast clock keeps every live viewer on the same cartoon.
-  // UI code may still format these timestamps in each viewer's local timezone.
-  const TIME_ZONE = "UTC";
+  // One Central broadcast clock keeps every live viewer on the same cartoon.
+  // UI code may still format these absolute timestamps in each viewer's local timezone.
+  const TIME_ZONE = "America/Chicago";
   const BLOCK_SECONDS = 1800;
   const BREAK_AFTER_CONTENT_SECONDS = [660];
   const SPOTS_PER_BREAK = 3;
@@ -18,7 +18,14 @@
   }
 
   function zonedToUtc(year, month, day, hour = 0, minute = 0, second = 0) {
-    return Date.UTC(year, month - 1, day, hour, minute, second);
+    const target = Date.UTC(year, month - 1, day, hour, minute, second);
+    let guess = target;
+    for (let i = 0; i < 4; i += 1) {
+      const p = stationParts(new Date(guess));
+      const represented = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
+      guess += target - represented;
+    }
+    return guess;
   }
 
   function dateKey(nowMs) {
@@ -102,8 +109,6 @@
       }
     }
 
-    // A short cartoon now ends cleanly. The remaining minutes are a synchronized
-    // station break instead of replaying the beginning of the cartoon.
     if (stationOffset < BLOCK_SECONDS) {
       pushSegment({kind:"station", title:"Next cartoon at the half hour", videoId:"", cleared:true, sourceStart:0}, BLOCK_SECONDS - stationOffset);
     }
