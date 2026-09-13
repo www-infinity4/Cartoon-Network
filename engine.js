@@ -64,7 +64,8 @@
     const todayKey = dateKey(nowMs);
     const slotCount = 48;
     const epochDay = Math.floor(midnightMs / 86400000);
-    const cycle = seededShuffle(eligible, "infinity-cartoon-cycle-v1");
+    const weekNumber = Math.floor(epochDay / 7);
+    const cycle = seededShuffle(eligible, `infinity-cartoon-week-v2:${weekNumber}`);
     const start = ((epochDay * slotCount) % cycle.length + cycle.length) % cycle.length;
     const featured = Array.from({length:48}, (_, index) => cycle[(start + index) % cycle.length]);
     return featured.map((movie, index) => ({
