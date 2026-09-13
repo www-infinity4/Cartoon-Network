@@ -3,7 +3,7 @@
 
   // One Central broadcast clock keeps every live viewer on the same cartoon.
   // UI code may still format these absolute timestamps in each viewer's local timezone.
-  const TIME_ZONE = "America/Chicago";
+  const TIME_ZONE = (Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Chicago");
   const BLOCK_SECONDS = 1800;
   const BREAK_AFTER_CONTENT_SECONDS = [660];
   const SPOTS_PER_BREAK = 3;
@@ -62,15 +62,11 @@
     const eligible = catalog.filter(movie => movie.cleared && movie.videoId);
     if (!eligible.length) throw new Error("Cartoon Network has no playable cartoons configured.");
     const todayKey = dateKey(nowMs);
-    let shuffled = seededShuffle(eligible, todayKey);
-    const previousKey = dateKey(midnightMs - 1000);
-    const previous = seededShuffle(eligible, previousKey);
-    if (shuffled.length > 1 && (shuffled[0] === previous[0] || shuffled.map((item) => item.videoId || item.title).join("|") === previous.map((item) => item.videoId || item.title).join("|"))) {
-      const firstDifferent = shuffled.findIndex((item) => (item.videoId || item.title) !== (previous[0].videoId || previous[0].title));
-      const offset = firstDifferent > 0 ? firstDifferent : 1;
-      shuffled = [...shuffled.slice(offset), ...shuffled.slice(0, offset)];
-    }
-    const featured = Array.from({length:48}, (_, index) => shuffled[index % shuffled.length]);
+    const slotCount = 48;
+    const epochDay = Math.floor(midnightMs / 86400000);
+    const cycle = seededShuffle(eligible, "infinity-cartoon-cycle-v1");
+    const start = ((epochDay * slotCount) % cycle.length + cycle.length) % cycle.length;
+    const featured = Array.from({length:48}, (_, index) => cycle[(start + index) % cycle.length]);
     return featured.map((movie, index) => ({
       id: `${todayKey}-${String(index).padStart(2,"0")}`,
       movie,
