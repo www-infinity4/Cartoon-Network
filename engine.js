@@ -6,6 +6,8 @@
   const TIME_ZONE = "UTC";
   const BLOCK_SECONDS = 1800;
   const BREAK_AFTER_CONTENT_SECONDS = [660];
+  const SPOTS_PER_BREAK = 3;
+  const DEFAULT_SPOT_SECONDS = 60;
 
   function stationParts(date) {
     const parts = new Intl.DateTimeFormat("en-US", {
@@ -63,7 +65,7 @@
     }
     const featured = Array.from({length:48}, (_, index) => shuffled[index % shuffled.length]);
     return featured.map((movie, index) => ({
-      id: `${dateKey(nowMs)}-${String(index).padStart(2,"0")}`,
+      id: `${todayKey}-${String(index).padStart(2,"0")}`,
       movie,
       startsAtMs: midnightMs + index * BLOCK_SECONDS * 1000,
       endsAtMs: midnightMs + (index + 1) * BLOCK_SECONDS * 1000,
@@ -74,27 +76,36 @@
   function createSegments(block, commercials) {
     const runtime = Math.min(block.movie.runtimeSeconds || 1320, BLOCK_SECONDS - 180);
     const boundaries = [0, ...BREAK_AFTER_CONTENT_SECONDS.filter(n => n < runtime), runtime];
+    const ads = Array.isArray(commercials) ? commercials : [];
     const segments = [];
     let stationOffset = 0;
     let adIndex = 0;
+
+    function pushSegment(segment, requestedDuration) {
+      const remaining = BLOCK_SECONDS - stationOffset;
+      if (remaining <= 0) return false;
+      const duration = Math.min(Math.max(1, requestedDuration), remaining);
+      segments.push({...segment, stationStart:stationOffset, duration});
+      stationOffset += duration;
+      return duration === requestedDuration;
+    }
+
+    outer:
     for (let i = 0; i < boundaries.length - 1; i++) {
       const sourceStart = boundaries[i];
-      const duration = boundaries[i + 1] - sourceStart;
-      segments.push({kind:"movie", title:block.movie.title, videoId:block.movie.videoId, cleared:block.movie.cleared, sourceStart, stationStart:stationOffset, duration});
-      stationOffset += duration;
+      if (!pushSegment({kind:"movie", title:block.movie.title, videoId:block.movie.videoId, cleared:block.movie.cleared, sourceStart}, boundaries[i + 1] - sourceStart)) break;
       if (i < boundaries.length - 2) {
-        for (let spot = 0; spot < 3; spot++) {
-          const ad = commercials[adIndex++ % commercials.length];
-          const duration = ad.durationSeconds || 60;
-          segments.push({kind:"commercial", title:ad.title, videoId:ad.videoId, cleared:ad.cleared, sourceStart:0, stationStart:stationOffset, duration});
-          stationOffset += duration;
+        for (let spot = 0; spot < SPOTS_PER_BREAK; spot++) {
+          const ad = ads.length ? (ads[adIndex++ % ads.length] || {}) : {title:"Cartoon Network station break", durationSeconds:DEFAULT_SPOT_SECONDS, videoId:"", cleared:false};
+          if (!pushSegment({kind:"commercial", title:ad.title || "Cartoon Network station break", videoId:ad.videoId || "", cleared:!!ad.cleared, sourceStart:0}, ad.durationSeconds || DEFAULT_SPOT_SECONDS)) break outer;
         }
       }
     }
+
+    // A short cartoon now ends cleanly. The remaining minutes are a synchronized
+    // station break instead of replaying the beginning of the cartoon.
     if (stationOffset < BLOCK_SECONDS) {
-      const duration = BLOCK_SECONDS - stationOffset;
-      segments.push({kind:"movie", title:block.movie.title, videoId:block.movie.videoId, cleared:block.movie.cleared, sourceStart:0, stationStart:stationOffset, duration});
-      stationOffset += duration;
+      pushSegment({kind:"station", title:"Next cartoon at the half hour", videoId:"", cleared:true, sourceStart:0}, BLOCK_SECONDS - stationOffset);
     }
     return segments;
   }
