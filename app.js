@@ -72,7 +72,15 @@
     els.guide.innerHTML = schedule.map(item => `<article class="guide-row" data-id="${item.id}"><time>${formatStationTime(item.startsAtMs)}</time><strong>${item.movie.title}</strong><span>${item.movie.year} · ${item.movie.collection}</span></article>`).join("");
   }
 
+  let renderedNextBlockKey = "";
+
   function renderNext(currentBlock) {
+
+    const nextBlockKey = currentBlock ? String(currentBlock.id || currentBlock.startsAtMs || "") + ":" + String((currentBlock.movie && currentBlock.movie.videoId) || (currentBlock.program && currentBlock.program.videoId) || "") : "";
+
+    if (nextBlockKey && nextBlockKey === renderedNextBlockKey) return;
+
+    renderedNextBlockKey = nextBlockKey;
     const currentIndex = schedule.findIndex(item => item.id === currentBlock.id);
     els.next.innerHTML = [1,2,3].map(step => {
       const item = schedule[(currentIndex + step) % schedule.length];
