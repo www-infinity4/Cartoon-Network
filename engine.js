@@ -29,6 +29,11 @@
     return `${p.year}-${String(p.month).padStart(2,"0")}-${String(p.day).padStart(2,"0")}`;
   }
 
+  function mondayIndex(nowMs) {
+    const weekday = new Intl.DateTimeFormat("en-US", {timeZone:TIME_ZONE,weekday:"short"}).format(new Date(nowMs));
+    return ({Mon:0,Tue:1,Wed:2,Thu:3,Fri:4,Sat:5,Sun:6})[weekday] ?? 0;
+  }
+
   function hash(text) {
     let value = 2166136261;
     for (let i = 0; i < text.length; i += 1) value = Math.imul(value ^ text.charCodeAt(i), 16777619);
@@ -76,8 +81,9 @@
     const todayKey = dateKey(nowMs);
     const slotCount = 48;
     const epochDay = Math.floor(midnightMs / 86400000);
-    const weekNumber = Math.floor(epochDay / 7);
-    const dayOfDeck = ((epochDay % 7) + 7) % 7;
+    const dayOfDeck = mondayIndex(nowMs);
+    const mondayEpochDay = epochDay - dayOfDeck;
+    const weekNumber = Math.floor(mondayEpochDay / 7);
     const cycle = seededShuffle(eligible, `cartoon-network-seven-day:${weekNumber}:${eligible.map(x => x.videoId).sort().join("|")}`);
     return Array.from({length:slotCount}, (_, index) => {
       const deckIndex = dayOfDeck * slotCount + index;
