@@ -85,17 +85,16 @@
     const mondayEpochDay = epochDay - dayOfDeck;
     const weekNumber = Math.floor(mondayEpochDay / 7);
     const cycle = seededShuffle(eligible, `cartoon-network-seven-day:${weekNumber}:${eligible.map(x => x.videoId).sort().join("|")}`);
+    const dayOffset = cycle.length ? (dayOfDeck * 13) % cycle.length : 0;
     return Array.from({length:slotCount}, (_, index) => {
-      const deckIndex = dayOfDeck * slotCount + index;
-      const movie = cycle[deckIndex] || {
-        id:`CN-FRESH-${todayKey}-${index}`,
-        title:"Fresh full cartoon source needed",
+      const movie = cycle.length ? cycle[(dayOffset + index) % cycle.length] : {
+        id:`CN-EMPTY-${todayKey}-${index}`,
+        title:"Cartoon source unavailable",
         year:"",
-        collection:"Repeat blocked by seven-day scheduler",
+        collection:"No usable full episode exists in the catalog",
         runtimeSeconds:BLOCK_SECONDS,
         videoId:"",
-        cleared:false,
-        refill:true
+        cleared:false
       };
       return {
         id: `${todayKey}-${String(index).padStart(2,"0")}`,
@@ -143,7 +142,7 @@
     }
 
     if (stationOffset < BLOCK_SECONDS) {
-      push({kind:"station",title:block.movie.refill ? "Fresh source required" : "Next cartoon at the half hour",videoId:"",cleared:true,sourceStart:0}, BLOCK_SECONDS - stationOffset);
+      push({kind:"station",title:"Next cartoon at the half hour",videoId:"",cleared:true,sourceStart:0}, BLOCK_SECONDS - stationOffset);
     }
     return segments;
   }
