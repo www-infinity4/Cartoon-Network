@@ -109,8 +109,39 @@
     els.cardCountdown.textContent = `${formatDuration(state.segmentRemaining)} until the next cartoon`;
   }
 
+  let remoteNow = null;
+  addEventListener("infinity:schedule-now", event => {
+    const x = event.detail;
+    const p = x && x.now;
+    const vid = p && p.source && p.source.sourceId;
+    if (!p || !/^[A-Za-z0-9_-]{6,15}$/.test(String(vid || ""))) return;
+    remoteNow = x;
+    loadedKey = "";
+    if (entered && playerReady) loadRemoteProgram();
+  });
+
+  function loadRemoteProgram() {
+    if (!remoteNow || !entered || !playerReady) return false;
+    const p = remoteNow.now;
+    const vid = String(p.source.sourceId);
+    const sec = Math.max(0, Number(remoteNow.offsetSeconds || 0));
+    const key = "remote:" + p.catalogId + ":" + vid;
+    els.stationCard.hidden = true;
+    els.title.textContent = p.title;
+    if (loadedKey !== key) {
+      loadedKey = key;
+      loadedMovieVideoId = vid;
+      player.loadVideoById({videoId:vid,startSeconds:sec});
+    } else if (mode === "live" && player.getPlayerState() === YT.PlayerState.PLAYING) {
+      const drift = sec - player.getCurrentTime();
+      if (Math.abs(drift) > 3) player.seekTo(sec, true);
+    }
+    return true;
+  }
+
   function loadMedia(state) {
     if (!entered) return;
+    if (remoteNow && mode === "live" && loadRemoteProgram()) return;
     const playable = state.segment.videoId && state.segment.cleared;
     const mediaKey = `${state.block.id}:${state.segment.stationStart}:${state.segment.videoId}`;
     if (!playable) {
