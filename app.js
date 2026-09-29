@@ -112,6 +112,14 @@
   let remoteNow = null;
   let remoteProgramKey = "";
   let lastRemoteSyncAt = 0;
+  const playbackTrace = [];
+  function tracePlayback(action, detail = {}) {
+    const entry = { at: Date.now(), action, loadedKey, loadedMovieVideoId, remoteProgramKey, mode, ...detail };
+    playbackTrace.push(entry);
+    if (playbackTrace.length > 80) playbackTrace.splice(0, playbackTrace.length - 80);
+    window.__INFINITY_PLAYBACK_TRACE = playbackTrace;
+    dispatchEvent(new CustomEvent("infinity:playback-trace", { detail: entry }));
+  }
 
   function getRemoteProgramKey(x) {
     const p = x && x.now;
@@ -125,6 +133,7 @@
     const nextKey = getRemoteProgramKey(x);
     if (!nextKey) return;
     const programChanged = nextKey !== remoteProgramKey;
+    tracePlayback("remote-schedule-event", { nextKey, programChanged, title: x && x.now && x.now.title, videoId: x && x.now && x.now.source && x.now.source.sourceId });
     remoteNow = x;
     remoteProgramKey = nextKey;
     // Schedule polling updates timing and guide data. It must only reload the
@@ -148,6 +157,7 @@
     if (loadedKey !== key) {
       loadedKey = key;
       loadedMovieVideoId = vid;
+      tracePlayback("player-load", { authority:"remote", reason:"remote-program-key-changed", key, videoId:vid, startSeconds:sec, title:p.title });
       player.loadVideoById({videoId:vid,startSeconds:sec});
     }
     return true;
@@ -169,12 +179,16 @@
     if (loadedKey !== mediaKey) {
       loadedKey = mediaKey;
       loadedMovieVideoId = state.segment.kind === "movie" ? state.segment.videoId : "";
+      tracePlayback("player-load", { authority:"local", reason:"local-media-key-changed", key:mediaKey, videoId:state.segment.videoId, startSeconds:state.mediaSeconds, title:state.block.movie.title });
       player.loadVideoById({videoId:state.segment.videoId,startSeconds:state.mediaSeconds});
       return;
     }
     if (mode === "live" && player.getPlayerState() === YT.PlayerState.PLAYING) {
       const drift = state.mediaSeconds - player.getCurrentTime();
-      if (Math.abs(drift) > 2.5) player.seekTo(state.mediaSeconds, true);
+      if (Math.abs(drift) > 2.5) {
+        tracePlayback("player-seek", { authority:"local", reason:"live-drift", driftSeconds:drift, targetSeconds:state.mediaSeconds, title:state.block.movie.title });
+        player.seekTo(state.mediaSeconds, true);
+      }
     }
   }
 
@@ -188,7 +202,10 @@
     els.mode.textContent = mode === "live" ? (state.segment.kind === "commercial" ? "LIVE · COMMERCIAL BREAK" : "LIVE · WORLDWIDE SYNC") : "TIME SHIFTED";
     // Cloudflare is authoritative while live. The local catalog is only a fallback.
     const remoteProgram = mode === "live" && remoteNow && remoteNow.now;
-    els.title.textContent = remoteProgram ? remoteProgram.title : state.block.movie.title;
+    const authoritativeTitle = remoteProgram ? remoteProgram.title : state.block.movie.title;
+    const titleAuthority = remoteProgram ? "remote" : "local";
+    if (els.title.textContent !== authoritativeTitle) tracePlayback("title-change", { authority:titleAuthority, from:els.title.textContent, to:authoritativeTitle });
+    els.title.textContent = authoritativeTitle;
     if (remoteProgram) {
       const remoteVideoId = String((remoteProgram.source && remoteProgram.source.sourceId) || "");
       if (remoteVideoId) document.body.style.setProperty("--program-art", `url("https://i.ytimg.com/vi/${remoteVideoId}/maxresdefault.jpg")`);
